@@ -4,7 +4,6 @@ namespace App\Http;
 
 use App\Controllers\AbstractController;
 use App\Http\Request;
-use App\Http\Response;
 
 class Router {
     public function route(Request $request): Response {
@@ -16,14 +15,16 @@ class Router {
             if(self::checkMethod($request, $route) === false){
                 continue;
             }
-        
+
             $controller = self::getController($route);
             return $controller->process($request);
         }
+
+        return new Response('Not found', 404);
     }
 
     private static function getConfig(): array {
-        $config = json_decode(file_get_contents(__DIR__ . '/../config/routes.json'));
+        $config = json_decode(file_get_contents(__DIR__ . '/../../config/routes.json'));
         return $config;
     }
 
