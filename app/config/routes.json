@@ -3,5 +3,11 @@
         "path": "/test",
         "methods": ["GET"],
         "controller": "TestController"
+    },
+
+    {
+        "path": "/contact",
+        "methods": ["POST"],
+        "controller": "App\\Controller\\ContactController"
     }
 ]
