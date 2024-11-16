@@ -3,5 +3,14 @@
         "path": "/test",
         "methods": ["GET"],
         "controller": "TestController"
+<<<<<<< Updated upstream
+=======
+    },
+
+    {
+        "path": "/contact",
+        "methods": ["POST"],
+        "controller": "ContactController"
+>>>>>>> Stashed changes
     }
 ]
