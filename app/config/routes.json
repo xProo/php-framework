@@ -8,5 +8,10 @@
         "path": "/contact",
         "methods": ["GET", "POST"],
         "controller": "ContactController"
+    },
+    {
+        "path": "/contact/{email}",
+        "methods": ["GET"],
+        "controller": "ContactController"
     }
 ]
