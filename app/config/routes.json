@@ -11,7 +11,7 @@
     },
     {
         "path": "/contact/{email}",
-        "methods": ["GET", "PATCH"],
+        "methods": ["GET", "PATCH", "DELETE"],
         "controller": "ContactController"
     }
 ]
