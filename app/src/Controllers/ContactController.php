@@ -23,6 +23,11 @@ class ContactController extends AbstractController
                 return $this->handlePatchRequest($matches[1], $request);
             }
         }
+        if ($request->getMethod() === 'DELETE') {
+            if (preg_match('#^/contact/(.+)$#', $request->getUri(), $matches)) {
+                return $this->handleDeleteRequest($matches[1]);
+            }
+        }
         return $this->handleRequest($request);
     }
 
@@ -174,6 +179,26 @@ class ContactController extends AbstractController
             200,
             ['Content-Type' => 'application/json']
         );
+    }
+
+    private function handleDeleteRequest(string $email): Response
+    {
+        $contactsDir = __DIR__ . '/../../var/contacts/';
+        $files = glob($contactsDir . '*_' . $email . '.json');
+
+        if (empty($files)) {
+            return new Response(
+                json_encode(['error' => 'Contact not found']),
+                404,
+                ['Content-Type' => 'application/json']
+            );
+        }
+
+        // Supprimer le fichier
+        unlink($files[0]);
+
+        // Retourner une réponse 204 (No Content)
+        return new Response('', 204);
     }
 
     private function sendResponse(array $data, int $statusCode): void
