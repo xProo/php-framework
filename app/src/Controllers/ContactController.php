@@ -12,6 +12,9 @@ class ContactController extends AbstractController
 {
     public function process(Request $request): Response
     {
+        if ($request->getMethod() === 'GET') {
+            return $this->handleGetRequest();
+        }
         return $this->handleRequest($request);
     }
 
@@ -56,6 +59,24 @@ class ContactController extends AbstractController
 
      
         return new Response(json_encode(['file' => $filename]), 201, ['Content-Type' => 'application/json']);
+    }
+
+    private function handleGetRequest(): Response
+    {
+        $contactsDir = __DIR__ . '/../../var/contacts/';
+        $files = glob($contactsDir . '*.json');
+        $contacts = [];
+
+        foreach ($files as $file) {
+            $content = file_get_contents($file);
+            $contacts[] = json_decode($content, true);
+        }
+
+        return new Response(
+            json_encode($contacts), 
+            200, 
+            ['Content-Type' => 'application/json']
+        );
     }
 
     private function sendResponse(array $data, int $statusCode): void

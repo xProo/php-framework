@@ -4,10 +4,9 @@
         "methods": ["GET"],
         "controller": "TestController"
     },
-
     {
         "path": "/contact",
-        "methods": ["POST"],
+        "methods": ["GET", "POST"],
         "controller": "ContactController"
     }
 ]
