@@ -13,7 +13,15 @@ class ContactController extends AbstractController
     public function process(Request $request): Response
     {
         if ($request->getMethod() === 'GET') {
+            if (preg_match('#^/contact/(.+)$#', $request->getUri(), $matches)) {
+                return $this->handleGetSingleRequest($matches[1]);
+            }
             return $this->handleGetRequest();
+        }
+        if ($request->getMethod() === 'PATCH') {
+            if (preg_match('#^/contact/(.+)$#', $request->getUri(), $matches)) {
+                return $this->handlePatchRequest($matches[1], $request);
+            }
         }
         return $this->handleRequest($request);
     }
@@ -75,6 +83,95 @@ class ContactController extends AbstractController
         return new Response(
             json_encode($contacts), 
             200, 
+            ['Content-Type' => 'application/json']
+        );
+    }
+
+    private function handleGetSingleRequest(string $email): Response
+    {
+        $contactsDir = __DIR__ . '/../../var/contacts/';
+        $files = glob($contactsDir . '*_' . $email . '.json');
+
+        if (empty($files)) {
+            return new Response(
+                json_encode(['error' => 'Contact not found']),
+                404,
+                ['Content-Type' => 'application/json']
+            );
+        }
+
+        $filePath = $files[0];
+        $content = file_get_contents($filePath);
+        return new Response(
+            $content,
+            200,
+            ['Content-Type' => 'application/json']
+        );
+    }
+
+    private function handlePatchRequest(string $email, Request $request): Response
+    {
+        // Trouver le fichier correspondant
+        $contactsDir = __DIR__ . '/../../var/contacts/';
+        
+        // Debug: Afficher les fichiers trouvés
+        error_log("Searching for files matching: " . $contactsDir . '*_' . $email . '.json');
+        $files = glob($contactsDir . '*_' . $email . '.json');
+        error_log("Found files: " . print_r($files, true));
+
+        if (empty($files)) {
+            return new Response(
+                json_encode(['error' => 'Contact not found']),
+                404,
+                ['Content-Type' => 'application/json']
+            );
+        }
+
+        // Lire les données existantes
+        $filePath = $files[0];
+        $existingData = json_decode(file_get_contents($filePath), true);
+
+        // Lire les données de la requête
+        $rawData = file_get_contents('php://input');
+        $updateData = json_decode($rawData, true);
+
+        // Debug: Afficher les données reçues
+        error_log("Update data received: " . print_r($updateData, true));
+
+        // Vérifier les champs autorisés
+        $allowedFields = ['email', 'subject', 'message'];
+        foreach ($updateData as $key => $value) {
+            if (!in_array($key, $allowedFields)) {
+                return new Response(
+                    json_encode(['error' => "Field not allowed: $key"]),
+                    400,
+                    ['Content-Type' => 'application/json']
+                );
+            }
+        }
+
+        // Mettre à jour les données
+        foreach ($updateData as $key => $value) {
+            $existingData[$key] = $value;
+        }
+        $existingData['dateOfLastUpdate'] = time();
+
+        // Si l'email a changé, renommer le fichier
+        $newFilePath = $filePath;
+        if (isset($updateData['email'])) {
+            $newFilename = date('Y-m-d_H-i-s', $existingData['dateOfCreation']) . '_' . $updateData['email'] . '.json';
+            $newFilePath = $contactsDir . $newFilename;
+        }
+
+        // Sauvegarder les modifications
+        file_put_contents($newFilePath, json_encode($existingData));
+        if ($newFilePath !== $filePath) {
+            unlink($filePath);
+        }
+
+        return new Response(
+            json_encode($existingData),
+            200,
             ['Content-Type' => 'application/json']
         );
     }
