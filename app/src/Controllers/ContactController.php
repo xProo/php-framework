@@ -17,14 +17,9 @@ class ContactController extends AbstractController
 
     public function handleRequest(Request $request): Response
     {
-        var_dump($request);
-        // Vérifier le type de contenu
-        if ($_SERVER['CONTENT_TYPE'] !== 'application/json') {
-            return new Response('Content type must be application/json', 400);
-        }
-
-        // Décoder le corps de la requête
-        $data = json_decode(file_get_contents('php://input'), true);
+        // Lire les données brutes
+        $rawData = file_get_contents('php://input');
+        $data = json_decode($rawData, true);
 
         // Valider les données
         $requiredFields = ['email', 'subject', 'message'];
@@ -41,9 +36,10 @@ class ContactController extends AbstractController
             }
         }
 
-        // Générer le nom de fichier
+        // Modifier le format du nom de fichier
         $timestamp = time();
-        $filename = "{$timestamp}_{$data['email']}.json";
+        $dateFormatted = date('Y-m-d_H-i-s', $timestamp);
+        $filename = "{$dateFormatted}_{$data['email']}.json";
 
         // Créer le contenu à sauvegarder
         $content = [
@@ -59,8 +55,7 @@ class ContactController extends AbstractController
         file_put_contents($filePath, json_encode($content));
 
      
-        return new Response("File created: $filename", 201) ; 
-        
+        return new Response(json_encode(['file' => $filename]), 201, ['Content-Type' => 'application/json']);
     }
 
     private function sendResponse(array $data, int $statusCode): void
