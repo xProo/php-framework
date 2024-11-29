@@ -9,7 +9,15 @@ use App\Http\Response;
 
 
 class ContactController extends AbstractController
-{
+{  
+
+    private string $email;
+    private string $subject;
+    private string $message;
+    private int $dateOfCreation;
+    private int $dateOfLastUpdate;
+
+
     public function process(Request $request): Response
     {
         if ($request->getMethod() === 'GET') {
@@ -36,6 +44,8 @@ class ContactController extends AbstractController
         // Lire les données brutes
         $rawData = file_get_contents('php://input');
         $data = json_decode($rawData, true);
+                                
+
 
         // Valider les données
         $requiredFields = ['email', 'subject', 'message'];
@@ -52,26 +62,18 @@ class ContactController extends AbstractController
             }
         }
 
-        // Modifier le format du nom de fichier
-        $timestamp = time();
-        $dateFormatted = date('Y-m-d_H-i-s', $timestamp);
-        $filename = "{$dateFormatted}_{$data['email']}.json";
-
-        // Créer le contenu à sauvegarder
-        $content = [
-            'email' => $data['email'],
-            'subject' => $data['subject'],
-            'message' => $data['message'],
-            'dateOfCreation' => $timestamp,
-            'dateOfLastUpdate' => $timestamp,
-        ];
+        // Utiliser les propriétés de la classe
+        $this->setContactProperties($data);
 
         // Sauvegarder dans le dossier /app/var/contacts
-        $filePath = __DIR__ . '/../../var/contacts/' . $filename;
-        file_put_contents($filePath, json_encode($content));
+        $filePath = __DIR__ . '/../../var/contacts/' . $this->getFilename();
+        file_put_contents($filePath, json_encode($this->toArray()));
 
-     
-        return new Response(json_encode(['file' => $filename]), 201, ['Content-Type' => 'application/json']);
+        return new Response(
+            json_encode(['file' => $this->getFilename()]), 
+            201, 
+            ['Content-Type' => 'application/json']
+        );
     }
 
     private function handleGetRequest(): Response
@@ -205,5 +207,30 @@ class ContactController extends AbstractController
     {
         header('Content-Type: application/json', true, $statusCode);
         echo json_encode($data);
+    }
+
+    private function setContactProperties(array $data): void
+    {
+        $this->email = $data['email'];
+        $this->subject = $data['subject'];
+        $this->message = $data['message'];
+        $this->dateOfCreation = time();
+        $this->dateOfLastUpdate = $this->dateOfCreation;
+    }
+
+    private function toArray(): array
+    {
+        return [
+            'email' => $this->email,
+            'subject' => $this->subject,
+            'message' => $this->message,
+            'dateOfCreation' => $this->dateOfCreation,
+            'dateOfLastUpdate' => $this->dateOfLastUpdate
+        ];
+    }
+
+    private function getFilename(): string
+    {
+        return date('Y-m-d_H-i-s', $this->dateOfCreation) . '_' . $this->email . '.json';
     }
 }
